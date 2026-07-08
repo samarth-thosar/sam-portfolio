@@ -1,0 +1,63 @@
+/* Hide the native cursor only when our custom one is active */
+body.has-cursor {
+  cursor: none;
+}
+body.has-cursor a,
+body.has-cursor button,
+body.has-cursor [data-magnetic] {
+  cursor: none;
+}
+
+.cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 200;
+  pointer-events: none;
+  border-radius: 50%;
+  margin-left: -0.5px;
+  margin-top: -0.5px;
+  will-change: transform;
+}
+
+/* small solid dot — tracks the cursor 1:1 */
+.cursor--dot {
+  width: 6px;
+  height: 6px;
+  margin-left: -3px;
+  margin-top: -3px;
+  background: var(--accent);
+  transition: opacity 0.3s ease, transform 0.12s ease;
+}
+
+/* trailing ring — eases behind, grows on hover */
+.cursor--ring {
+  width: 34px;
+  height: 34px;
+  margin-left: -17px;
+  margin-top: -17px;
+  border: 1px solid rgba(242, 239, 233, 0.5);
+  transition: width 0.35s var(--ease-out), height 0.35s var(--ease-out),
+    margin 0.35s var(--ease-out), border-color 0.35s var(--ease-out),
+    background 0.35s var(--ease-out);
+}
+
+/* hover state over interactive elements */
+body.cursor-hover .cursor--ring {
+  width: 60px;
+  height: 60px;
+  margin-left: -30px;
+  margin-top: -30px;
+  border-color: var(--accent);
+  background: var(--accent-glow);
+}
+body.cursor-hover .cursor--dot {
+  opacity: 0;
+}
+
+/* only show on fine pointers */
+@media (pointer: coarse) {
+  .cursor {
+    display: none;
+  }
+}

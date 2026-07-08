@@ -1,0 +1,102 @@
+/* ---------- Nav ---------- */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: var(--z-nav);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: clamp(1rem, 2.4vw, 1.6rem) var(--page-pad);
+  mix-blend-mode: difference; /* stays legible over any background */
+}
+.nav__brand {
+  font-size: 0.85rem;
+  letter-spacing: 0.14em;
+  color: #fff;
+}
+.nav__links {
+  display: flex;
+  gap: clamp(1rem, 3vw, 2.2rem);
+}
+.nav__links a {
+  color: #fff;
+  position: relative;
+  transition: opacity 0.3s var(--ease-out);
+}
+.nav__links a:hover {
+  opacity: 0.6;
+}
+@media (max-width: 520px) {
+  .nav__links {
+    gap: 1rem;
+  }
+}
+
+/* ---------- Preview / scroll runway ---------- */
+.preview {
+  padding-block: clamp(8rem, 22vh, 16rem);
+}
+.preview__inner {
+  max-width: 62ch;
+  margin-left: 0;
+}
+.preview__title {
+  font-size: var(--fs-h2);
+  margin: clamp(1.2rem, 3vh, 2rem) 0 1.6rem;
+}
+.preview__body {
+  font-size: var(--fs-lead);
+  color: var(--text-dim);
+  max-width: 52ch;
+}
+.preview__body strong {
+  color: var(--text);
+  font-weight: 600;
+}
+.preview__next {
+  list-style: none;
+  margin-top: clamp(2.5rem, 6vh, 4rem);
+  display: grid;
+  gap: 0.9rem;
+  border-top: 1px solid var(--line);
+  padding-top: 2rem;
+}
+.preview__next li {
+  color: var(--muted);
+  letter-spacing: 0.06em;
+}
+
+/* ---------- Footer ---------- */
+.footer {
+  position: relative;
+  z-index: var(--z-content);
+  padding-block: clamp(5rem, 14vh, 9rem) clamp(2rem, 5vh, 3rem);
+  border-top: 1px solid var(--line);
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.4));
+}
+.footer__big {
+  font-size: var(--fs-h2);
+  max-width: 16ch;
+  margin-bottom: clamp(2.5rem, 6vh, 4rem);
+}
+.footer__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.4rem 2rem;
+  padding-bottom: 2.5rem;
+  border-bottom: 1px solid var(--line);
+}
+.footer__links a {
+  transition: color 0.3s var(--ease-out);
+}
+.footer__links a:hover {
+  color: var(--accent);
+}
+.footer__fine {
+  margin-top: 1.6rem;
+  color: var(--muted);
+  text-transform: none;
+  letter-spacing: 0.04em;
+}

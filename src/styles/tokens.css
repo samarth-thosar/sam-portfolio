@@ -1,0 +1,50 @@
+:root {
+  /* ---- Palette: premium dark, one warm accent ---- */
+  --ink: #0b0d10; /* base background */
+  --ink-800: #101317; /* raised */
+  --surface: #14171c; /* elevated surface / cards */
+  --surface-700: #1b1f26; /* hover surface */
+  --line: #242932; /* hairline borders */
+
+  --text: #f2efe9; /* warm off-white */
+  --text-dim: #b7bcc4; /* secondary */
+  --muted: #8a8f98; /* tertiary / labels */
+
+  --accent: #ff7a45; /* sunrise amber — the ONE accent */
+  --accent-soft: #ff8f60;
+  --accent-glow: rgba(255, 122, 69, 0.16);
+
+  /* football-pitch green used *very* sparingly for the No.8 / playmaker motif */
+  --pitch: #58c079;
+
+  /* ---- Typography ---- */
+  --font-display: 'Clash Display', 'General Sans', system-ui, sans-serif;
+  --font-sans: 'General Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* fluid type scale (min .. max via clamp) */
+  --fs-mono: clamp(0.7rem, 0.66rem + 0.2vw, 0.8rem);
+  --fs-body: clamp(1rem, 0.95rem + 0.3vw, 1.15rem);
+  --fs-lead: clamp(1.25rem, 1.1rem + 0.9vw, 1.9rem);
+  --fs-h3: clamp(1.5rem, 1.2rem + 1.6vw, 2.6rem);
+  --fs-h2: clamp(2.2rem, 1.4rem + 4vw, 5rem);
+  --fs-display: clamp(3.2rem, 1.2rem + 10vw, 12rem);
+
+  /* ---- Space / layout ---- */
+  --page-pad: clamp(1.25rem, 5vw, 5rem);
+  --maxw: 1440px;
+  --radius: 14px;
+  --radius-lg: 22px;
+
+  /* ---- Motion ---- */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-inout: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur: 0.6s;
+
+  /* ---- z-index scale ---- */
+  --z-canvas: 0;
+  --z-content: 10;
+  --z-nav: 40;
+  --z-console: 80;
+  --z-grain: 90;
+}
