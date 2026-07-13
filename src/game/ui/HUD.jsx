@@ -1,5 +1,6 @@
 import { useGame, currentRoomData } from '../store.js'
 import { setMuted } from '../audio.js'
+import { links } from '../../data/links.js'
 
 function SpeakerIcon({ muted }) {
   return (
@@ -57,9 +58,20 @@ export default function HUD() {
         </div>
       </div>
 
+      {/* always-reachable, regardless of how much of the world you've explored —
+          a good impression is wasted if there's no fast way to act on it */}
+      <div className="hud__contact mono">
+        <a href={links.github} target="_blank" rel="noreferrer">GitHub</a>
+        <span className="hud__contact-sep">·</span>
+        <a href={links.linkedin} target="_blank" rel="noreferrer">LinkedIn</a>
+        <span className="hud__contact-sep">·</span>
+        <a href={links.cv} target="_blank" rel="noreferrer">CV</a>
+        <span className="hud__contact-sep">·</span>
+        <a href={links.email}>Email</a>
+      </div>
+
       <p className="hud__hint mono">
-        Click <span className="accent">glowing objects</span> to inspect · click a{' '}
-        <span className="accent">doorway</span> (or ← →) to travel · move your mouse to look
+        Click <span className="accent">glowing objects</span> to inspect · click a <span className="accent">doorway</span> (or ← →) to travel · move your mouse to look
       </p>
     </div>
   )

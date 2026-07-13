@@ -17,12 +17,15 @@ browser download.)
 
 ```
 npm run dev            # in one terminal
-node scripts/shoot.js after            # screenshots: title, both rooms, two inspects
-node scripts/verify-interactions.js    # hover/click/Esc matrix for all objects + doors
+node scripts/shoot.cjs after            # screenshots: title, both rooms, two inspects
+node scripts/verify-interactions.cjs    # hover/click/Esc matrix for all objects + doors
 ```
 
 Screenshots land in `scripts/shots/`. If the dev server isn't on 5173, set
-`MINDSCAPE_URL`, e.g. `MINDSCAPE_URL=http://localhost:5174 node scripts/shoot.js x`.
+`MINDSCAPE_URL`, e.g. `MINDSCAPE_URL=http://localhost:5174 node scripts/shoot.cjs x`.
+
+(`.cjs`, not `.js` — the project's `package.json` has `"type": "module"`, and these
+scripts use CommonJS `require`.)
 
 ## How it works
 

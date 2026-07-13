@@ -15,8 +15,12 @@ const NOOP = () => {}
  * to the direction of travel (doors between rooms along x get rotation
  * [0, PI/2, 0]). One invisible hitbox is the only raycast target — the visual
  * meshes don't raycast, so hover can't flicker between them.
+ *
+ * Tinted with the DESTINATION room's accent — the archway previews the mood
+ * shift before you step through (Studio's door into the Lab glows cyan; the
+ * Lab's door back glows orange) rather than one hardcoded colour everywhere.
  */
-export default function Door({ to, position, rotation = [0, 0, 0], label }) {
+export default function Door({ to, position, rotation = [0, 0, 0], label, accent = '#ff7a45' }) {
   const [hovered, setHovered] = useState(false)
   useCursor(hovered)
   const goToRoom = useGame((s) => s.goToRoom)
@@ -50,7 +54,7 @@ export default function Door({ to, position, rotation = [0, 0, 0], label }) {
         }}
         onClick={(e) => {
           e.stopPropagation()
-          playWhoosh()
+          playWhoosh(to)
           goToRoom(to)
         }}
       >
@@ -61,18 +65,18 @@ export default function Door({ to, position, rotation = [0, 0, 0], label }) {
       {/* portal glow — fills the opening down to the floor */}
       <mesh ref={glow} raycast={NOOP} position={[0, -0.55, -0.05]}>
         <planeGeometry args={[1.7, 2.4]} />
-        <meshBasicMaterial color="#ff7a45" transparent opacity={0.06} depthWrite={false} />
+        <meshBasicMaterial color={accent} transparent opacity={0.06} depthWrite={false} />
       </mesh>
       {/* arch */}
       <mesh ref={arch} raycast={NOOP} position={[0, -0.05, 0]}>
         <torusGeometry args={[0.92, 0.055, 14, 40, Math.PI]} />
-        <meshStandardMaterial color="#ff7a45" emissive="#ff7a45" emissiveIntensity={0.5} toneMapped={false} />
+        <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.5} toneMapped={false} />
       </mesh>
       {/* posts — from the arch ends down to the floor */}
       {[-0.92, 0.92].map((x) => (
         <mesh key={x} raycast={NOOP} position={[x, -0.925, 0]}>
           <cylinderGeometry args={[0.055, 0.055, 1.75, 12]} />
-          <meshStandardMaterial color="#ff7a45" emissive="#ff7a45" emissiveIntensity={0.5} toneMapped={false} />
+          <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.5} toneMapped={false} />
         </mesh>
       ))}
 

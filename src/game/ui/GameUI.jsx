@@ -13,7 +13,7 @@ export default function GameUI() {
   useEffect(() => {
     const onKey = (e) => {
       const s = useGame.getState()
-      if (!s.entered) return
+      if (!s.entered || e.repeat) return
       if (e.key === 'Escape') {
         clearInspect()
         return
@@ -22,7 +22,7 @@ export default function GameUI() {
       if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && !s.inspectId) {
         const door = WORLD.rooms[s.currentRoom].doors[0]
         if (door) {
-          playWhoosh()
+          playWhoosh(door.to)
           s.goToRoom(door.to)
         }
       }
@@ -31,7 +31,10 @@ export default function GameUI() {
     return () => window.removeEventListener('keydown', onKey)
   }, [clearInspect])
 
-  const inspecting = useGame((s) => !!s.inspectId)
+  // wait for the camera to actually be framing the object (past any holdBeat
+  // pause) before dimming the room — otherwise the vignette/card would open
+  // over a wide shot the camera hasn't started moving toward yet
+  const inspecting = useGame((s) => !!s.inspectId && s.cameraFraming)
 
   return (
     <>

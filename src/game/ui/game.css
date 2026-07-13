@@ -125,7 +125,9 @@ body,
   gap: 0.7rem;
   pointer-events: auto;
 }
-.hud__disc {
+.hud__disc.mono {
+  /* .mono (global.css) also sets `color: var(--muted)`; this two-class
+     selector outranks it so the counter gets the brighter --text-dim */
   padding: 0.55em 0.9em;
   border: 1px solid var(--line);
   border-radius: 100px;
@@ -177,6 +179,37 @@ body,
   white-space: nowrap;
 }
 
+/* a quiet, permanent way to act on a good impression — not gated behind
+   exploring the whole world first */
+.hud__contact {
+  position: absolute;
+  bottom: clamp(1.1rem, 3vh, 2rem);
+  left: var(--page-pad);
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  pointer-events: auto;
+}
+.hud__contact a {
+  color: var(--muted);
+  text-transform: none;
+  letter-spacing: 0.04em;
+  transition: color 0.3s;
+}
+.hud__contact a:hover,
+.hud__contact a:focus-visible {
+  color: var(--accent);
+}
+.hud__contact-sep {
+  color: var(--line);
+}
+
+@media (max-width: 860px) {
+  .hud__contact {
+    display: none;
+  }
+}
+
 /* ---------- Inspect focus vignette ---------- */
 .inspect-focus {
   position: fixed;
@@ -218,18 +251,29 @@ body,
 }
 .inspect__card {
   position: relative;
-  padding: 1.6rem 1.7rem;
+  padding: 1.6rem 1.7rem 1.6rem 1.9rem;
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   background: rgba(16, 19, 23, 0.82);
   backdrop-filter: blur(16px);
   box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.8);
-  animation: cardIn 0.5s var(--ease-out);
+  animation: cardIn 0.4s var(--ease-out);
+  overflow: hidden;
+}
+/* a thin accent rule on the reading edge — the one place the room's own
+   colour (orange in the Studio, cyan in the Lab) touches the UI chrome */
+.inspect__card::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--accent);
+  opacity: 0.85;
 }
 @keyframes cardIn {
   from {
     opacity: 0;
-    transform: translateY(10px) scale(0.99);
+    transform: scale(0.985);
   }
 }
 .inspect__close {
@@ -243,7 +287,9 @@ body,
 .inspect__close:hover {
   color: var(--text);
 }
-.inspect__eyebrow {
+.inspect__eyebrow.mono {
+  /* .mono (global.css) also sets `color`; this two-class selector outranks
+     it so the eyebrow actually shows the room's accent, not muted grey */
   color: var(--accent);
   letter-spacing: 0.14em;
   margin-bottom: 0.7rem;

@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { WORLD, DISCOVERABLE_IDS } from '../data/world.js'
 import { prefersReducedMotion } from '../lib/lenis.js'
+import { setRoom } from './audio.js'
 
 /**
  * Central game state. Camera, rooms, inspection, discoveries, and audio all
@@ -15,17 +16,22 @@ export const useGame = create((set, get) => ({
   currentRoom: WORLD.start,
   goToRoom: (id) => {
     if (!WORLD.rooms[id]) return
-    set({ currentRoom: id, inspectId: null, hoverId: null })
+    setRoom(id)
+    set({ currentRoom: id, inspectId: null, hoverId: null, cameraFraming: false })
   },
 
   // ---- inspection ----
   inspectId: null,
+  // true once CameraRig has actually settled onto the object (past any
+  // holdBeat pause) — the UI (card, vignette) waits for this rather than
+  // opening the instant inspectId changes. Written by CameraRig only.
+  cameraFraming: false,
   inspect: (id) => {
     const { discovered } = get()
     const next = discovered.includes(id) ? discovered : [...discovered, id]
     set({ inspectId: id, discovered: next })
   },
-  clearInspect: () => set({ inspectId: null }),
+  clearInspect: () => set({ inspectId: null, cameraFraming: false }),
 
   // ---- discoveries ----
   discovered: [],

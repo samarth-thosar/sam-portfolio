@@ -1,19 +1,28 @@
 import { Sparkles, ContactShadows } from '@react-three/drei'
 import { useGame } from '../store.js'
+import { DataMotes } from '../props.jsx'
 
 /**
- * Floor + two walls that frame a room, plus its accent fill light and floating
- * dust. Drawn at `origin` in world space; a room's props/interactables are
- * rendered as siblings in absolute coordinates.
+ * Floor + two walls that frame a room, plus its accent fill light and ambient
+ * particle life. Drawn at `origin` in world space; a room's props/interactables
+ * are rendered as siblings in absolute coordinates.
  */
-export default function RoomShell({ origin = [0, 0, 0], accent = '#ff7a45', fill = '#2a3550' }) {
+export default function RoomShell({
+  origin = [0, 0, 0],
+  accent = '#ff7a45',
+  fill = '#2a3550',
+  rim = accent, // back-rim colour; defaults to accent but a room can diverge (e.g. cool rim in a warm-accent room)
+  floorRoughness = 0.94,
+  floorMetalness = 0.02,
+  particles = 'dust', // 'dust' (warm random drift) | 'data' (motes shuttling rack -> core)
+}) {
   const calm = useGame((s) => s.calm)
   return (
     <group position={origin}>
       {/* floor */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.9, 0]} receiveShadow>
         <planeGeometry args={[11, 9]} />
-        <meshStandardMaterial color="#1f242c" roughness={0.94} metalness={0.02} />
+        <meshStandardMaterial color="#1f242c" roughness={floorRoughness} metalness={floorMetalness} />
       </mesh>
       {/* back wall — runs from the side wall (x=-4.6) to the floor edge, so the
           two walls meet exactly at the corner instead of overshooting */}
@@ -37,10 +46,10 @@ export default function RoomShell({ origin = [0, 0, 0], accent = '#ff7a45', fill
 
       {/* soft grounding shadow so props sit in the room */}
       <ContactShadows position={[0, -0.88, 0]} scale={13} blur={2.6} far={4.5} opacity={0.6} color="#000000" />
-      {/* warm back-rim for silhouette separation */}
-      <pointLight position={[-2, 1.5, -2.6]} intensity={0.55} color="#ff7a45" distance={10} />
+      {/* back-rim for silhouette separation — its own colour, not always warm */}
+      <pointLight position={[-2, 1.5, -2.6]} intensity={0.55} color={rim} distance={10} />
 
-      {!calm && (
+      {!calm && particles === 'dust' && (
         <Sparkles
           count={26}
           scale={[8, 4, 7]}
@@ -51,6 +60,7 @@ export default function RoomShell({ origin = [0, 0, 0], accent = '#ff7a45', fill
           color={accent}
         />
       )}
+      {!calm && particles === 'data' && <DataMotes color={accent} />}
     </group>
   )
 }
