@@ -162,6 +162,66 @@ const ROOM_VOICES = {
     gustGain.connect(windGain.gain)
     gust.start()
   },
+  // Library: a soft, sustained bowed tone (like a singing bowl left ringing)
+  // — hushed and still, distinct from every other room's busier textures.
+  library: (gain) => {
+    const bowlFilter = ctx.createBiquadFilter()
+    bowlFilter.type = 'lowpass'
+    bowlFilter.frequency.value = 900
+    bowlFilter.Q.value = 1.2
+    bowlFilter.connect(gain)
+    const bowlGain = ctx.createGain()
+    bowlGain.gain.value = 0.035
+    bowlGain.connect(bowlFilter)
+    ;[261.6, 392].forEach((f, i) => {
+      const o = ctx.createOscillator()
+      o.type = 'sine'
+      o.frequency.value = f
+      o.detune.value = i * 3
+      o.connect(bowlGain)
+      o.start()
+    })
+    const swell = ctx.createOscillator()
+    swell.frequency.value = 0.045
+    const swellGain = ctx.createGain()
+    swellGain.gain.value = 0.02
+    swell.connect(swellGain)
+    swellGain.connect(bowlGain.gain)
+    swell.start()
+  },
+  // Greenhouse: soft leaf-rustle air plus a very sparse, quiet high chime —
+  // an occasional "water droplet" rather than a steady layer.
+  greenhouse: (gain) => {
+    const rustleFilter = ctx.createBiquadFilter()
+    rustleFilter.type = 'highpass'
+    rustleFilter.frequency.value = 1800
+    rustleFilter.connect(gain)
+    const rustle = ctx.createBufferSource()
+    rustle.buffer = noise
+    rustle.loop = true
+    const rustleGain = ctx.createGain()
+    rustleGain.gain.value = 0.03
+    rustle.connect(rustleGain)
+    rustleGain.connect(rustleFilter)
+    rustle.start()
+    const drip = () => {
+      const t0 = now()
+      const o = ctx.createOscillator()
+      o.type = 'sine'
+      o.frequency.setValueAtTime(1800, t0)
+      o.frequency.exponentialRampToValueAtTime(900, t0 + 0.2)
+      const g = ctx.createGain()
+      g.gain.setValueAtTime(0.0001, t0)
+      g.gain.exponentialRampToValueAtTime(0.035, t0 + 0.01)
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.25)
+      o.connect(g)
+      g.connect(gain)
+      o.start(t0)
+      o.stop(t0 + 0.3)
+      setTimeout(drip, 5000 + Math.random() * 6000)
+    }
+    drip()
+  },
 }
 
 function startAmbient() {
@@ -328,6 +388,10 @@ const HOVER_VOICES = {
   mailbox: () => blip(700, 900, 0.03, 'triangle', 0.03),
   trail: () => blip(500, 620, 0.05, 'sine', 0.03),
   yogamat: () => blip(300, 340, 0.08, 'sine', 0.025),
+  neonate: () => blip(700, 620, 0.05, 'sine', 0.02),
+  constellation: () => blip(1500, 1700, 0.02, 'sine', 0.018),
+  revogreen: () => blip(500, 560, 0.04, 'triangle', 0.025),
+  seeds: () => noiseTick(0.02, 3600, 0.03),
 }
 export function playHover(kind) {
   const voice = HOVER_VOICES[kind]
@@ -439,6 +503,21 @@ const SELECT_VOICES = {
     g.connect(master)
     o.start(t0)
     o.stop(t0 + 1.85)
+  },
+  // a gentle two-note swell — warm and unhurried, not a confirm-beep
+  neonate: () => {
+    blip(520, 620, 0.3, 'sine', 0.07)
+    blip(620, 780, 0.35, 'sine', 0.05, 0.15)
+  },
+  // a small ascending shimmer — ideas clicking into place
+  constellation: () => {
+    ;[1046.5, 1318.5, 1568, 1760].forEach((f, i) => blip(f, f, 0.14, 'sine', 0.035, i * 0.06))
+  },
+  // an organic upward swoop, like a stem stretching toward light
+  revogreen: () => blip(340, 620, 0.22, 'triangle', 0.08),
+  // a quick sparkling ascent, like water finding the roots
+  seeds: () => {
+    ;[900, 1200, 1600].forEach((f, i) => blip(f, f * 1.15, 0.05, 'sine', 0.03, i * 0.05))
   },
 }
 export function playSelect(kind) {

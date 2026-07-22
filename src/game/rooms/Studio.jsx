@@ -151,7 +151,7 @@ export default function Studio() {
 
   return (
     <>
-      <RoomShell origin={R.origin} accent={R.accent} fill={R.fill} />
+      <RoomShell origin={R.origin} accent={R.accent} fill={R.fill} floorSize={R.floorSize} />
 
       {/* ---- dressing (non-interactive) ---- */}
       <group position={R.origin}>

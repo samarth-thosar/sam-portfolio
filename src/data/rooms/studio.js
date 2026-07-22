@@ -17,13 +17,24 @@ export const studio = {
     register: 'warm', // audio.js playBack/playWhoosh register
     camera: { look: [0, 1.2, 0], zoom: 70 },
     objectIds: ['studio-monitor', 'studio-papers', 'studio-whiteboard'],
+    // floor widened ([14, 10.5]) now that this hub has five exits — plain
+    // furniture positions below are unchanged, the extra room is all at the edges
+    floorSize: [14, 10.5],
     doors: [
       // travel to the lab is along +x, so the archway faces +x
       { to: 'lab', position: [5.2, 0.9, -1.5], rotation: [0, Math.PI / 2, 0], label: 'The Lab' },
       // travel to the threshold is along +z, on the open front edge
       { to: 'threshold', position: [0, 0.9, 3.9], rotation: [0, 0, 0], label: 'The Threshold' },
-      // a ladder rather than an archway — climbs straight up to the rooftop
-      { to: 'rooftop', position: [-4.4, 0.9, 3.0], rotation: [0, Math.PI / 2, 0], label: 'The Rooftop', kind: 'ladder' },
+      // a ladder rather than an archway — climbs straight up to the rooftop.
+      // proud of the (now-widened) west wall, same 0.2 offset convention as
+      // every other wall-mounted door in the world
+      { to: 'rooftop', position: [-5.9, 0.9, 3.0], rotation: [0, Math.PI / 2, 0], label: 'The Rooftop', kind: 'ladder' },
+      // also proud of the west wall, spaced well clear of the ladder
+      { to: 'library', position: [-5.9, 0.9, 0.5], rotation: [0, Math.PI / 2, 0], label: 'The Library' },
+      // also proud of the west wall (a back-wall placement here projects
+      // right behind the monitor's hitbox from this iso angle and steals its
+      // clicks — verified via screen-space projection, not just eyeballing)
+      { to: 'greenhouse', position: [-5.9, 0.9, -2.0], rotation: [0, Math.PI / 2, 0], label: 'The Greenhouse' },
     ],
   },
 
