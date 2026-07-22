@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import { RoundedBox, Instances, Instance } from '@react-three/drei'
 import * as THREE from 'three'
 import { useGame } from './store.js'
-import { drawIDE, drawGradCam } from '../three/posters.js'
+import { drawIDE, drawGradCam, drawStackIQ } from '../three/posters.js'
 
 /* Reusable greybox props. Simple forms, but each one is *alive* — screens
    flicker, cores rotate, lamps breathe — so the world never feels static. */
@@ -199,6 +199,60 @@ export function GradCamScreen({ position, rotation, size = [1.4, 0.82], active =
       pct = 91.6 + Math.sin(t * 1.7) * 0.35 + (active ? 0.15 : 0)
     }
     drawGradCam(ctx2d, canvas.width, h, { scanY, pct, t })
+    tex.needsUpdate = true
+  })
+
+  return (
+    <mesh position={position} rotation={rotation}>
+      <planeGeometry args={size} />
+      <meshStandardMaterial ref={mat} map={tex} emissive="#ffffff" emissiveMap={tex} emissiveIntensity={1} toneMapped={false} />
+    </mesh>
+  )
+}
+
+// StackIQ's readout: a 5-stage pipeline (4 read-only, 1 human-gated) cycling
+// through what the audit actually finds. On wake the tick cycles faster for
+// a beat — "reviewing everything" — before settling to its idle pace.
+export function StackIQScreen({ position, rotation, size = [1.4, 0.82], active = false }) {
+  const canvas = useMemo(() => Object.assign(document.createElement('canvas'), { width: 512, height: 360 }), [])
+  const ctx2d = useMemo(() => canvas.getContext('2d'), [canvas])
+  const tex = useMemo(() => {
+    const t = new THREE.CanvasTexture(canvas)
+    t.colorSpace = THREE.SRGBColorSpace
+    return t
+  }, [canvas])
+  const mat = useRef()
+  const calm = useGame((s) => s.calm)
+  const wasActive = useRef(false)
+  const wakeT = useRef(null)
+  const acc = useRef(0)
+  const tickAcc = useRef(0)
+  const tick = useRef(0)
+
+  useFrame((s, dt) => {
+    if (active && !wasActive.current) {
+      wakeT.current = s.clock.elapsedTime
+      tick.current = 0
+      tickAcc.current = 0
+    }
+    wasActive.current = active
+    if (mat.current) mat.current.emissiveIntensity = calm ? 1 : 1 + Math.sin(s.clock.elapsedTime * 3) * 0.05
+
+    if (!calm) {
+      const t = s.clock.elapsedTime
+      const reviewing = wakeT.current !== null && t - wakeT.current < 1.5
+      tickAcc.current += dt
+      const tickRate = reviewing ? 0.22 : 0.75
+      if (tickAcc.current > tickRate) {
+        tickAcc.current = 0
+        tick.current++
+      }
+    }
+
+    acc.current += dt
+    if (acc.current < 1 / 24) return
+    acc.current = 0
+    drawStackIQ(ctx2d, canvas.width, canvas.height, { tick: tick.current, t: s.clock.elapsedTime })
     tex.needsUpdate = true
   })
 

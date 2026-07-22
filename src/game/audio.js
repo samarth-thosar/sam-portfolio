@@ -268,6 +268,10 @@ const HOVER_VOICES = {
     blip(300, 290, 0.015, 'square', 0.03)
     blip(300, 290, 0.015, 'square', 0.03, 0.05)
   },
+  stackiq: () => {
+    blip(1600, 1900, 0.025, 'square', 0.022)
+    blip(1900, 2100, 0.025, 'square', 0.018, 0.03)
+  },
 }
 export function playHover(kind) {
   const voice = HOVER_VOICES[kind]
@@ -342,6 +346,12 @@ const SELECT_VOICES = {
     trem.stop(t0 + dur + 0.03)
     o.start(t0)
     o.stop(t0 + dur + 0.03)
+  },
+  // 4 quick ascending ticks (the read-only stages) then one lower, held tone
+  // (the gated action stage) — the pipeline's shape, heard rather than read
+  stackiq: () => {
+    ;[1400, 1600, 1800, 2000].forEach((f, i) => blip(f, f, 0.035, 'square', 0.035, i * 0.045))
+    blip(320, 260, 0.16, 'triangle', 0.09, 0.045 * 4 + 0.04)
   },
 }
 export function playSelect(kind) {

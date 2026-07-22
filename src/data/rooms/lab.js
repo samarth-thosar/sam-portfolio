@@ -20,7 +20,7 @@ export const lab = {
     particles: 'data',
     register: 'cool', // audio.js playBack/playWhoosh register
     camera: { look: [24, 1.2, 0], zoom: 70 },
-    objectIds: ['lab-neural', 'lab-visionguard', 'lab-drone'],
+    objectIds: ['lab-neural', 'lab-visionguard', 'lab-drone', 'lab-stackiq'],
     // just proud of the side wall (inner face x=19.4) so the arch reads as a
     // portal on the wall instead of poking through it
     doors: [{ to: 'studio', position: [19.6, 0.9, -1.5], rotation: [0, Math.PI / 2, 0], label: 'The Studio' }],
@@ -70,6 +70,29 @@ export const lab = {
         title: 'Diagnosis & prognosis',
         body: "I'd rather catch a failure than explain one after the fact. This drone fleet gets its own early-warning system — ML models for diagnosis, prognosis and automated alerts, surfaced live on a dashboard for real-time monitoring.",
         tags: ['Time-series', 'Alerting', 'Dashboards'],
+      },
+    },
+    'lab-stackiq': {
+      id: 'lab-stackiq',
+      room: 'lab',
+      position: [26.5, 1.2, 0.8],
+      kind: 'stackiq',
+      label: 'StackIQ',
+      // a vertical reveal reading up the pipeline steps toward the screen
+      inspect: {
+        dy: 0.1,
+        dz: 0.25,
+        zoom: 126,
+        k: 3.4,
+        swayAmp: 0.04,
+        pan: { axis: 'y', amp: 0.12, speed: 0.4 },
+        bokeh: 2.4,
+      },
+      story: {
+        eyebrow: 'AI/SaaS diagnostics · Claude',
+        title: 'The read-then-act harness',
+        body: "The newest thing on my bench. StackIQ audits how a team is actually using Claude — idle seats, tier mismatches, duplicate tools, orphaned accounts, shadow IT — through a 5-stage pipeline. Four stages only read; the fifth only acts, and only behind a human-approval gate I built in on purpose.",
+        tags: ['Claude', 'Cowork', 'Diagnostics', 'Human-in-the-loop'],
       },
     },
   },

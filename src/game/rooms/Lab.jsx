@@ -4,7 +4,7 @@ import { WORLD } from '../../data/world.js'
 import RoomShell from './RoomShell.jsx'
 import Interactable from '../Interactable.jsx'
 import Door from '../Door.jsx'
-import { Slab, GradCamScreen, NeuralCore, Lamp } from '../props.jsx'
+import { Slab, GradCamScreen, StackIQScreen, NeuralCore, Lamp } from '../props.jsx'
 import { posterAI } from '../../three/posters.js'
 import { useGame } from '../store.js'
 
@@ -146,10 +146,46 @@ function Drone({ active = false }) {
   )
 }
 
+// StackIQ, his newest project: five ascending steps — four lit cyan
+// (read-only stages), the fifth lit amber (the one stage that acts, and only
+// behind a human-approval gate) — leading up to the terminal screen.
+function StackIQ({ active }) {
+  const steps = [0, 1, 2, 3, 4]
+  return (
+    <group>
+      {steps.map((i) => {
+        const gated = i === 4
+        const x = -0.6 + i * 0.3
+        const stepH = 0.12 + i * 0.06
+        const y = -0.55 + stepH / 2 + i * 0.05
+        return (
+          <group key={i}>
+            <Slab args={[0.24, stepH, 0.24]} position={[x, y, 0]} color="#181b21" radius={0.02} />
+            <mesh position={[x, y + stepH / 2 + 0.006, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+              <planeGeometry args={[0.2, 0.2]} />
+              <meshStandardMaterial
+                color={gated ? '#ff7a45' : '#5ad1ff'}
+                emissive={gated ? '#ff7a45' : '#5ad1ff'}
+                emissiveIntensity={gated ? 1.2 : 0.8}
+                toneMapped={false}
+              />
+            </mesh>
+          </group>
+        )
+      })}
+      {/* terminal screen at the summit */}
+      <Slab args={[0.06, 0.5, 0.06]} position={[0.6, 0.15, 0]} color="#3a3f47" radius={0.02} />
+      <Slab args={[0.95, 0.62, 0.05]} position={[0.6, 0.55, 0]} color="#0f1216" radius={0.03} />
+      <StackIQScreen position={[0.6, 0.55, 0.035]} size={[0.85, 0.5]} active={active} />
+    </group>
+  )
+}
+
 export default function Lab() {
   const neuralActive = useGame((s) => s.inspectId === 'lab-neural')
   const visionguardActive = useGame((s) => s.inspectId === 'lab-visionguard')
   const droneActive = useGame((s) => s.inspectId === 'lab-drone')
+  const stackiqActive = useGame((s) => s.inspectId === 'lab-stackiq')
 
   return (
     <>
@@ -226,6 +262,19 @@ export default function Lab() {
         kind="drone"
       >
         <Drone active={droneActive} />
+      </Interactable>
+
+      <Interactable
+        id="lab-stackiq"
+        label={O['lab-stackiq'].label}
+        position={O['lab-stackiq'].position}
+        radius={0.85}
+        hitbox={[1.7, 1.3, 0.7]}
+        labelY={0.9}
+        accent={R.accent}
+        kind="stackiq"
+      >
+        <StackIQ active={stackiqActive} />
       </Interactable>
 
       {/* ---- door — glows with the STUDIO's accent, foreshadowing the warmth ---- */}
