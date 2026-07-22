@@ -11,11 +11,13 @@
  */
 import { studio } from './rooms/studio.js'
 import { lab } from './rooms/lab.js'
+import { threshold } from './rooms/threshold.js'
+import { rooftop } from './rooms/rooftop.js'
 
-const ALL_ROOMS = [studio, lab]
+const ALL_ROOMS = [threshold, studio, lab, rooftop]
 
 export const WORLD = {
-  start: 'studio',
+  start: 'threshold',
   rooms: Object.fromEntries(ALL_ROOMS.map((r) => [r.room.id, r.room])),
   objects: Object.assign({}, ...ALL_ROOMS.map((r) => r.objects)),
 }

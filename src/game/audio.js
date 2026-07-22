@@ -110,6 +110,58 @@ const ROOM_VOICES = {
     chatterLfoGain.connect(humGain.gain)
     chatterLfo.start()
   },
+  // Threshold: soft wind-chime resonance — a few high tones triggering at
+  // slow, random intervals. The "someone's home" warmth of an entryway,
+  // distinct from Studio's steady tape-flutter hum.
+  threshold: (gain) => {
+    const chimeFilter = ctx.createBiquadFilter()
+    chimeFilter.type = 'bandpass'
+    chimeFilter.frequency.value = 1200
+    chimeFilter.Q.value = 4
+    chimeFilter.connect(gain)
+    const notes = [880, 1046.5, 1318.5, 1568]
+    const chime = () => {
+      const f = notes[Math.floor(Math.random() * notes.length)]
+      const t0 = now()
+      const o = ctx.createOscillator()
+      o.type = 'sine'
+      o.frequency.value = f
+      const g = ctx.createGain()
+      g.gain.setValueAtTime(0.0001, t0)
+      g.gain.exponentialRampToValueAtTime(0.05, t0 + 0.03)
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 2.2)
+      o.connect(g)
+      g.connect(chimeFilter)
+      o.start(t0)
+      o.stop(t0 + 2.3)
+      setTimeout(chime, 3500 + Math.random() * 4500)
+    }
+    chime()
+  },
+  // Rooftop: open-sky wind — breezier and higher than Studio's dust or Lab's
+  // server hum, with a slow gust swell instead of a flat drone.
+  rooftop: (gain) => {
+    const windFilter = ctx.createBiquadFilter()
+    windFilter.type = 'bandpass'
+    windFilter.frequency.value = 1500
+    windFilter.Q.value = 0.5
+    windFilter.connect(gain)
+    const wind = ctx.createBufferSource()
+    wind.buffer = noise
+    wind.loop = true
+    const windGain = ctx.createGain()
+    windGain.gain.value = 0.05
+    wind.connect(windGain)
+    windGain.connect(windFilter)
+    wind.start()
+    const gust = ctx.createOscillator()
+    gust.frequency.value = 0.08
+    const gustGain = ctx.createGain()
+    gustGain.gain.value = 0.03
+    gust.connect(gustGain)
+    gustGain.connect(windGain.gain)
+    gust.start()
+  },
 }
 
 function startAmbient() {
@@ -272,6 +324,10 @@ const HOVER_VOICES = {
     blip(1600, 1900, 0.025, 'square', 0.022)
     blip(1900, 2100, 0.025, 'square', 0.018, 0.03)
   },
+  letter: () => noiseTick(0.018, 4200, 0.04),
+  mailbox: () => blip(700, 900, 0.03, 'triangle', 0.03),
+  trail: () => blip(500, 620, 0.05, 'sine', 0.03),
+  yogamat: () => blip(300, 340, 0.08, 'sine', 0.025),
 }
 export function playHover(kind) {
   const voice = HOVER_VOICES[kind]
@@ -352,6 +408,37 @@ const SELECT_VOICES = {
   stackiq: () => {
     ;[1400, 1600, 1800, 2000].forEach((f, i) => blip(f, f, 0.035, 'square', 0.035, i * 0.045))
     blip(320, 260, 0.16, 'triangle', 0.09, 0.045 * 4 + 0.04)
+  },
+  letter: () => {
+    noiseRap(0.05, 900, 2.5, 0.09)
+    blip(1200, 1500, 0.06, 'sine', 0.05, 0.04)
+  },
+  mailbox: () => {
+    blip(500, 700, 0.05, 'triangle', 0.08)
+    blip(700, 500, 0.08, 'triangle', 0.07, 0.05)
+  },
+  trail: () => {
+    blip(440, 550, 0.12, 'triangle', 0.08)
+    blip(550, 660, 0.14, 'triangle', 0.07, 0.1)
+  },
+  // a slow inhale/exhale swell rather than a percussive confirm — matches
+  // the yoga mat's calmer register
+  yogamat: () => {
+    if (!ctx || muted) return
+    const t0 = now()
+    const o = ctx.createOscillator()
+    o.type = 'sine'
+    o.frequency.setValueAtTime(220, t0)
+    o.frequency.linearRampToValueAtTime(260, t0 + 0.9)
+    o.frequency.linearRampToValueAtTime(220, t0 + 1.8)
+    const g = ctx.createGain()
+    g.gain.setValueAtTime(0.0001, t0)
+    g.gain.linearRampToValueAtTime(0.05, t0 + 0.5)
+    g.gain.linearRampToValueAtTime(0.0001, t0 + 1.8)
+    o.connect(g)
+    g.connect(master)
+    o.start(t0)
+    o.stop(t0 + 1.85)
   },
 }
 export function playSelect(kind) {

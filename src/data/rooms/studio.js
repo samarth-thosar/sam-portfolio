@@ -17,8 +17,14 @@ export const studio = {
     register: 'warm', // audio.js playBack/playWhoosh register
     camera: { look: [0, 1.2, 0], zoom: 70 },
     objectIds: ['studio-monitor', 'studio-papers', 'studio-whiteboard'],
-    // travel to the lab is along +x, so the archway faces +x
-    doors: [{ to: 'lab', position: [5.2, 0.9, -1.5], rotation: [0, Math.PI / 2, 0], label: 'The Lab' }],
+    doors: [
+      // travel to the lab is along +x, so the archway faces +x
+      { to: 'lab', position: [5.2, 0.9, -1.5], rotation: [0, Math.PI / 2, 0], label: 'The Lab' },
+      // travel to the threshold is along +z, on the open front edge
+      { to: 'threshold', position: [0, 0.9, 3.9], rotation: [0, 0, 0], label: 'The Threshold' },
+      // a ladder rather than an archway — climbs straight up to the rooftop
+      { to: 'rooftop', position: [-4.4, 0.9, 3.0], rotation: [0, Math.PI / 2, 0], label: 'The Rooftop', kind: 'ladder' },
+    ],
   },
 
   objects: {

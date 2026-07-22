@@ -46,6 +46,15 @@ export default function InspectCard() {
               {s.link.label} ↗
             </a>
           )}
+          {s.links && (
+            <div className="inspect__links">
+              {s.links.map((l) => (
+                <a key={l.label} className="inspect__link" href={l.href} target="_blank" rel="noreferrer">
+                  {l.label} ↗
+                </a>
+              ))}
+            </div>
+          )}
           <button className="inspect__back mono" onClick={close}>
             ← back to the room
           </button>

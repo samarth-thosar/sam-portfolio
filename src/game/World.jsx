@@ -15,8 +15,10 @@ import { WORLD } from '../data/world.js'
 // lights/particles per room); lazy-loading only chunks the import so first
 // paint doesn't wait on every room's code, not a runtime mount/unmount scheme.
 const ROOM_COMPONENTS = {
+  threshold: lazy(() => import('./rooms/Threshold.jsx')),
   studio: lazy(() => import('./rooms/Studio.jsx')),
   lab: lazy(() => import('./rooms/Lab.jsx')),
+  rooftop: lazy(() => import('./rooms/Rooftop.jsx')),
 }
 
 // dev-only baked-pipeline flags:

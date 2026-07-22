@@ -4,13 +4,13 @@ import { WORLD } from '../../data/world.js'
 import RoomShell from './RoomShell.jsx'
 import Interactable from '../Interactable.jsx'
 import Door from '../Door.jsx'
+import Ladder from '../Ladder.jsx'
 import { Slab, IDEScreen, Lamp, Plant } from '../props.jsx'
 import { posterEight, posterDraftStamp } from '../../three/posters.js'
 import { useGame } from '../store.js'
 
 const R = WORLD.rooms.studio
 const O = WORLD.objects
-const LAB_ACCENT = WORLD.rooms.lab.accent
 
 function WallPoster({ make, position, rotation, size }) {
   const tex = useMemo(make, [make])
@@ -237,10 +237,21 @@ export default function Studio() {
         <Whiteboard />
       </Interactable>
 
-      {/* ---- door — glows with the LAB's accent, foreshadowing the mood shift ---- */}
-      {R.doors.map((d) => (
-        <Door key={d.to} to={d.to} position={d.position} rotation={d.rotation} label={d.label} accent={LAB_ACCENT} />
-      ))}
+      {/* ---- doors/ladder — each glows with its destination room's own accent,
+          foreshadowing the mood shift before you arrive ---- */}
+      {R.doors.map((d) => {
+        const Trigger = d.kind === 'ladder' ? Ladder : Door
+        return (
+          <Trigger
+            key={d.to}
+            to={d.to}
+            position={d.position}
+            rotation={d.rotation}
+            label={d.label}
+            accent={WORLD.rooms[d.to].accent}
+          />
+        )
+      })}
     </>
   )
 }

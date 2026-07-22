@@ -331,6 +331,15 @@ body,
 .inspect__link:hover {
   border-color: var(--accent);
 }
+.inspect__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.3rem;
+  margin-top: 1.3rem;
+}
+.inspect__links .inspect__link {
+  margin-top: 0;
+}
 .inspect__back {
   display: block;
   margin-top: 1.3rem;
