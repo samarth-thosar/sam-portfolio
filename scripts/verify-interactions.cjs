@@ -94,7 +94,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
       await sleep(400)
     }
 
-    for (const door of room.doors || []) {
+    for (const door of [...(room.doors || []), ...(room.triggers || [])]) {
       const [dx, dy] = await project(door.position)
       await page.mouse.move(dx, dy, { steps: 4 })
       await sleep(400)

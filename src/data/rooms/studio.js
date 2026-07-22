@@ -35,7 +35,14 @@ export const studio = {
       // right behind the monitor's hitbox from this iso angle and steals its
       // clicks — verified via screen-space projection, not just eyeballing)
       { to: 'greenhouse', position: [-5.9, 0.9, -2.0], rotation: [0, Math.PI / 2, 0], label: 'The Greenhouse' },
+      // on the open east edge, well clear of the Lab's own door on that
+      // same edge
+      { to: 'guildhall', position: [6.3, 0.9, 2.5], rotation: [0, Math.PI / 2, 0], label: 'The Guild Hall' },
     ],
+    // non-Door travel triggers — same `to` contract as doors (goToRoom), a
+    // different skin. The football sits in the open floor, clear of the
+    // desk cluster and every door's projected screen position.
+    triggers: [{ to: 'pitch', position: [2.2, -0.75, 1.6], label: 'The Pitch', kind: 'football' }],
   },
 
   objects: {

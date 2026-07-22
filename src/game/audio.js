@@ -222,6 +222,64 @@ const ROOM_VOICES = {
     }
     drip()
   },
+  // Guild Hall: a warm, sustained major-ish chord pad — a room full of
+  // people, rendered as gentle harmony rather than any one voice.
+  guildhall: (gain) => {
+    const hallFilter = ctx.createBiquadFilter()
+    hallFilter.type = 'lowpass'
+    hallFilter.frequency.value = 1100
+    hallFilter.connect(gain)
+    const chordGain = ctx.createGain()
+    chordGain.gain.value = 0.028
+    chordGain.connect(hallFilter)
+    ;[196, 246.94, 293.66].forEach((f, i) => {
+      const o = ctx.createOscillator()
+      o.type = 'triangle'
+      o.frequency.value = f
+      o.detune.value = (i - 1) * 3
+      o.connect(chordGain)
+      o.start()
+    })
+    const swell = ctx.createOscillator()
+    swell.frequency.value = 0.07
+    const swellGain = ctx.createGain()
+    swellGain.gain.value = 0.012
+    swell.connect(swellGain)
+    swellGain.connect(chordGain.gain)
+    swell.start()
+  },
+  // Pitch: open-air low rumble (distant crowd/wind on a field) plus a very
+  // occasional soft high tone, like a far-off whistle.
+  pitch: (gain) => {
+    const rumbleFilter = ctx.createBiquadFilter()
+    rumbleFilter.type = 'lowpass'
+    rumbleFilter.frequency.value = 420
+    rumbleFilter.connect(gain)
+    const rumble = ctx.createBufferSource()
+    rumble.buffer = noise
+    rumble.loop = true
+    const rumbleGain = ctx.createGain()
+    rumbleGain.gain.value = 0.045
+    rumble.connect(rumbleGain)
+    rumbleGain.connect(rumbleFilter)
+    rumble.start()
+    const whistle = () => {
+      const t0 = now()
+      const o = ctx.createOscillator()
+      o.type = 'sine'
+      o.frequency.value = 2400
+      const g = ctx.createGain()
+      g.gain.setValueAtTime(0.0001, t0)
+      g.gain.exponentialRampToValueAtTime(0.02, t0 + 0.05)
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.9)
+      o.connect(g)
+      g.connect(gain)
+      o.start(t0)
+      o.stop(t0 + 1)
+      setTimeout(whistle, 9000 + Math.random() * 8000)
+    }
+    whistle()
+  },
 }
 
 function startAmbient() {
@@ -392,6 +450,11 @@ const HOVER_VOICES = {
   constellation: () => blip(1500, 1700, 0.02, 'sine', 0.018),
   revogreen: () => blip(500, 560, 0.04, 'triangle', 0.025),
   seeds: () => noiseTick(0.02, 3600, 0.03),
+  mentees: () => blip(620, 720, 0.04, 'triangle', 0.025),
+  opensource: () => blip(900, 1100, 0.03, 'sine', 0.02),
+  ieeeapp: () => blip(1500, 1650, 0.025, 'square', 0.02),
+  jersey: () => noiseTick(0.02, 3200, 0.035),
+  tactics: () => blip(560, 480, 0.04, 'sine', 0.03),
 }
 export function playHover(kind) {
   const voice = HOVER_VOICES[kind]
@@ -518,6 +581,31 @@ const SELECT_VOICES = {
   // a quick sparkling ascent, like water finding the roots
   seeds: () => {
     ;[900, 1200, 1600].forEach((f, i) => blip(f, f * 1.15, 0.05, 'sine', 0.03, i * 0.05))
+  },
+  // a warm little triad — many people, one gesture of thanks
+  mentees: () => {
+    ;[392, 494, 587.3].forEach((f, i) => blip(f, f, 0.16, 'triangle', 0.06, i * 0.05))
+  },
+  // an organic growing swoop with a small sparkling tail — one contribution, then more
+  opensource: () => {
+    blip(320, 560, 0.2, 'triangle', 0.07)
+    ;[1100, 1400].forEach((f, i) => blip(f, f, 0.05, 'sine', 0.025, 0.15 + i * 0.05))
+  },
+  // a crisp, modern two-tap confirm — an app notification, not an artifact chime
+  ieeeapp: () => {
+    blip(1200, 1200, 0.05, 'square', 0.06)
+    blip(1600, 1600, 0.06, 'square', 0.06, 0.08)
+  },
+  // a soft cloth-whoosh + thud — pulling a jersey off its hook
+  jersey: () => {
+    noiseTick(0.08, 2200, 0.07)
+    blip(180, 140, 0.09, 'sine', 0.07, 0.05)
+  },
+  // chalk/marker taps, same voice family as the whiteboard's — this is a
+  // tactics board, after all
+  tactics: () => {
+    noiseRap(0.05, 540, 3, 0.13)
+    noiseRap(0.05, 500, 3, 0.12, 0.09)
   },
 }
 export function playSelect(kind) {

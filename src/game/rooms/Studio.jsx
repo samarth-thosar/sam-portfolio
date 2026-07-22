@@ -1,5 +1,6 @@
-import { useMemo, useRef } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
+import { Html, useCursor } from '@react-three/drei'
 import { WORLD } from '../../data/world.js'
 import RoomShell from './RoomShell.jsx'
 import Interactable from '../Interactable.jsx'
@@ -8,9 +9,90 @@ import Ladder from '../Ladder.jsx'
 import { Slab, IDEScreen, Lamp, Plant } from '../props.jsx'
 import { posterEight, posterDraftStamp } from '../../three/posters.js'
 import { useGame } from '../store.js'
+import { playWhoosh } from '../audio.js'
 
 const R = WORLD.rooms.studio
 const O = WORLD.objects
+const NOOP = () => {}
+
+// The football — a travel trigger like Door/Ladder (click -> goToRoom, no
+// inspect card), skinned as a ball that actually gets kicked away toward the
+// Pitch instead of an archway. Idles with a slow spin and a soft floor glow;
+// mid-kick it launches, spins fast, and shrinks with distance.
+function Football({ to, position, label, accent }) {
+  const [hovered, setHovered] = useState(false)
+  useCursor(hovered)
+  const goToRoom = useGame((s) => s.goToRoom)
+  const ball = useRef()
+  const glow = useRef()
+  const tRef = useRef(0)
+  const kickT = useRef(null)
+
+  useFrame((s, dt) => {
+    tRef.current = s.clock.elapsedTime
+    const t = tRef.current
+    const k = 1 - Math.exp(-8 * dt)
+    if (glow.current) {
+      const pulse = Math.sin(t * 2.2) * 0.5 + 0.5
+      const target = hovered ? 0.4 : 0.12 + pulse * 0.12
+      glow.current.material.opacity += (target - glow.current.material.opacity) * k
+    }
+    if (ball.current) {
+      if (kickT.current !== null) {
+        const p = Math.min(1, (t - kickT.current) / 0.5)
+        const ease = p * p
+        ball.current.position.x = ease * 3.4
+        ball.current.position.y = 0.1 + Math.sin(p * Math.PI) * 0.65
+        ball.current.rotation.x -= dt * 28
+        ball.current.scale.setScalar(1 - ease * 0.45)
+      } else {
+        ball.current.rotation.y += dt * (hovered ? 1.4 : 0.5)
+      }
+    }
+  })
+
+  return (
+    <group position={position}>
+      <mesh
+        position={[0, 0.1, 0]}
+        onPointerOver={(e) => {
+          e.stopPropagation()
+          setHovered(true)
+        }}
+        onPointerOut={(e) => {
+          e.stopPropagation()
+          setHovered(false)
+        }}
+        onClick={(e) => {
+          e.stopPropagation()
+          if (kickT.current !== null) return
+          kickT.current = tRef.current
+          playWhoosh(to)
+          goToRoom(to)
+        }}
+      >
+        <boxGeometry args={[0.6, 0.6, 0.6]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
+      <mesh ref={glow} raycast={NOOP} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.29, 0]}>
+        <ringGeometry args={[0.18, 0.24, 24]} />
+        <meshBasicMaterial color={accent} transparent opacity={0.12} depthWrite={false} />
+      </mesh>
+      <mesh ref={ball} raycast={NOOP} position={[0, 0.1, 0]} castShadow>
+        <icosahedronGeometry args={[0.17, 1]} />
+        <meshStandardMaterial color="#e8e8e8" roughness={0.6} />
+      </mesh>
+      {hovered && (
+        <Html position={[0, 0.55, 0]} center zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
+          <div className="iobj is-hover">
+            <span className="iobj__dot" />
+            {label} →
+          </div>
+        </Html>
+      )}
+    </group>
+  )
+}
 
 function WallPoster({ make, position, rotation, size }) {
   const tex = useMemo(make, [make])
@@ -252,6 +334,12 @@ export default function Studio() {
           />
         )
       })}
+
+      {/* ---- football — a non-Door travel trigger; kicking it is the
+          Pitch's entry, same goToRoom contract as every door ---- */}
+      {(R.triggers || []).map((tr) => (
+        <Football key={tr.to} to={tr.to} position={tr.position} label={tr.label} accent={WORLD.rooms[tr.to].accent} />
+      ))}
     </>
   )
 }
