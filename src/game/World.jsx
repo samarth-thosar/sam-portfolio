@@ -1,15 +1,23 @@
-import { Suspense, useEffect, useMemo, useRef } from 'react'
+import { Suspense, lazy, useEffect, useMemo, useRef } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { EffectComposer, Bloom, Vignette, DepthOfField } from '@react-three/postprocessing'
 import { SoftShadows, AdaptiveDpr } from '@react-three/drei'
 import * as THREE from 'three'
 import CameraRig, { ISO_DIR } from './CameraRig.jsx'
-import Studio from './rooms/Studio.jsx'
-import Lab from './rooms/Lab.jsx'
 import BakedProof from './dev/BakedProof.jsx'
 import BakedRoom from './BakedRoom.jsx'
 import { useGame } from './store.js'
 import { WORLD } from '../data/world.js'
+
+// Every room, lazy-loaded — adding a room to the world is adding one entry
+// here (plus its data/rooms/*.js module). All rooms stay permanently mounted
+// once resolved (proven fine at this scene complexity — a handful of meshes/
+// lights/particles per room); lazy-loading only chunks the import so first
+// paint doesn't wait on every room's code, not a runtime mount/unmount scheme.
+const ROOM_COMPONENTS = {
+  studio: lazy(() => import('./rooms/Studio.jsx')),
+  lab: lazy(() => import('./rooms/Lab.jsx')),
+}
 
 // dev-only baked-pipeline flags:
 //   /?bakedproof          shader proof (runtime placeholder bakes; add &night=1)
@@ -74,11 +82,16 @@ function KeyLight() {
     const look = room.camera.look
     const k = 1 - Math.exp(-3 * dt)
     cur.current.x += (look[0] - cur.current.x) * k
+    cur.current.y += (look[1] - cur.current.y) * k
     cur.current.z += (look[2] - cur.current.z) * k
     curIntensity.current += ((room.keyIntensity ?? 1.55) - curIntensity.current) * k
     if (light.current) {
-      light.current.position.set(cur.current.x + 6, 11, cur.current.z + 5)
-      target.position.set(cur.current.x, 0, cur.current.z)
+      // offsets relative to the room's own look height, not an absolute world
+      // Y — a room sitting far above/below origin (e.g. a rooftop reached by
+      // a vertical transition) still gets a correctly-placed key light instead
+      // of one anchored to Studio/Lab's ground-level Y.
+      light.current.position.set(cur.current.x + 6, cur.current.y + 9.8, cur.current.z + 5)
+      target.position.set(cur.current.x, cur.current.y - 1.2, cur.current.z)
       target.updateMatrixWorld()
       light.current.color.lerp(roomColors[room.id], k)
       light.current.intensity = curIntensity.current
@@ -181,10 +194,7 @@ export default function World() {
         ) : SHOW_BAKED_ROOM ? (
           <BakedStudio />
         ) : (
-          <>
-            <Studio />
-            <Lab />
-          </>
+          Object.entries(ROOM_COMPONENTS).map(([id, Room]) => <Room key={id} />)
         )}
       </Suspense>
 

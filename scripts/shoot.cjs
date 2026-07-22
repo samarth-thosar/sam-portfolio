@@ -1,5 +1,7 @@
-// Screenshot pass: title -> studio -> lab -> two inspects.
-// Usage: node scripts/shoot.js <outPrefix>   (see scripts/README.md)
+// Screenshot pass: title -> every room in the world -> one inspect per room.
+// Usage: node scripts/shoot.cjs <outPrefix>   (see scripts/README.md)
+// Room/object list is derived from src/data/world.js, so a new room is
+// automatically included with no changes needed here.
 const path = require('path')
 const fs = require('fs')
 const puppeteer = require('puppeteer-core')
@@ -12,6 +14,8 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const shot = (page, name) => page.screenshot({ path: path.join(OUT, `${prefix}-${name}.png`) })
 
 ;(async () => {
+  const { WORLD } = await import('../src/data/world.js')
+
   fs.mkdirSync(OUT, { recursive: true })
   const browser = await puppeteer.launch({
     executablePath: EDGE,
@@ -40,25 +44,23 @@ const shot = (page, name) => page.screenshot({ path: path.join(OUT, `${prefix}-$
   })
   if (!clicked) await page.evaluate(() => window.__game?.getState().enterWorld())
   await sleep(5000)
-  await shot(page, '1-studio')
 
-  await page.evaluate(() => window.__game.getState().goToRoom('lab'))
-  await sleep(5000)
-  await shot(page, '2-lab')
+  let i = 1
+  for (const roomId of Object.keys(WORLD.rooms)) {
+    await page.evaluate((id) => window.__game.getState().goToRoom(id), roomId)
+    await sleep(5000)
+    await shot(page, `${i}-${roomId}`)
 
-  await page.evaluate(() => window.__game.getState().inspect('lab-neural'))
-  await sleep(3000)
-  await shot(page, '3-lab-inspect')
-
-  await page.evaluate(() => {
-    const s = window.__game.getState()
-    s.clearInspect()
-    s.goToRoom('studio')
-  })
-  await sleep(4500)
-  await page.evaluate(() => window.__game.getState().inspect('studio-monitor'))
-  await sleep(3000)
-  await shot(page, '4-studio-inspect')
+    const firstObjectId = WORLD.rooms[roomId].objectIds?.[0]
+    if (firstObjectId) {
+      await page.evaluate((id) => window.__game.getState().inspect(id), firstObjectId)
+      await sleep(3000)
+      await shot(page, `${i}-${roomId}-inspect`)
+      await page.evaluate(() => window.__game.getState().clearInspect())
+      await sleep(600)
+    }
+    i++
+  }
 
   console.log(errors.length ? errors.join('\n') : 'no console errors')
   console.log('screenshots in', OUT)

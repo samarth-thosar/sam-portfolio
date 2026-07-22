@@ -2,10 +2,19 @@ import { Sparkles, ContactShadows } from '@react-three/drei'
 import { useGame } from '../store.js'
 import { DataMotes } from '../props.jsx'
 
+// Fixed corner insets the wall math is built around (see the derivation in
+// the room-expansion plan) — kept constant so wall centers stay correct for
+// any floorSize, not just the original [11, 9].
+const X_INSET = 0.9
+const Z_INSET = 1.2
+
 /**
  * Floor + two walls that frame a room, plus its accent fill light and ambient
  * particle life. Drawn at `origin` in world space; a room's props/interactables
  * are rendered as siblings in absolute coordinates.
+ *
+ * `floorSize`/`wallsEnabled` let a room diverge from the default boxed L-shape
+ * — e.g. a wider hub room, or an open-sky room with no walls at all.
  */
 export default function RoomShell({
   origin = [0, 0, 0],
@@ -15,31 +24,45 @@ export default function RoomShell({
   floorRoughness = 0.94,
   floorMetalness = 0.02,
   particles = 'dust', // 'dust' (warm random drift) | 'data' (motes shuttling rack -> core)
+  floorSize = [11, 9],
+  wallsEnabled = true,
+  wallHeight = 5.5,
 }) {
   const calm = useGame((s) => s.calm)
+  const [W, D] = floorSize
+  const backWallWidth = W - X_INSET
+  const backWallZ = -D / 2 + Z_INSET
+  const sideWallDepth = D - Z_INSET
+  const sideWallX = -W / 2 + X_INSET
+
   return (
     <group position={origin}>
       {/* floor */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.9, 0]} receiveShadow>
-        <planeGeometry args={[11, 9]} />
+        <planeGeometry args={floorSize} />
         <meshStandardMaterial color="#1f242c" roughness={floorRoughness} metalness={floorMetalness} />
       </mesh>
-      {/* back wall — runs from the side wall (x=-4.6) to the floor edge, so the
-          two walls meet exactly at the corner instead of overshooting */}
-      <mesh position={[0.45, 1.6, -3.3]} receiveShadow>
-        <planeGeometry args={[10.1, 5.5]} />
-        <meshStandardMaterial color="#181d24" roughness={1} />
-      </mesh>
-      {/* side wall — runs from the back wall (z=-3.3) to the floor edge */}
-      <mesh position={[-4.6, 1.6, 0.6]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
-        <planeGeometry args={[7.8, 5.5]} />
-        <meshStandardMaterial color="#141920" roughness={1} />
-      </mesh>
-      {/* skirting accent line where floor meets back wall */}
-      <mesh position={[0.45, -0.86, -3.28]}>
-        <planeGeometry args={[10.1, 0.03]} />
-        <meshBasicMaterial color={accent} transparent opacity={0.25} />
-      </mesh>
+
+      {wallsEnabled && (
+        <>
+          {/* back wall — runs from the side wall to the floor edge, so the
+              two walls meet exactly at the corner instead of overshooting */}
+          <mesh position={[0.45, wallHeight / 2 - 1.15, backWallZ]} receiveShadow>
+            <planeGeometry args={[backWallWidth, wallHeight]} />
+            <meshStandardMaterial color="#181d24" roughness={1} />
+          </mesh>
+          {/* side wall — runs from the back wall to the floor edge */}
+          <mesh position={[sideWallX, wallHeight / 2 - 1.15, 0.6]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
+            <planeGeometry args={[sideWallDepth, wallHeight]} />
+            <meshStandardMaterial color="#141920" roughness={1} />
+          </mesh>
+          {/* skirting accent line where floor meets back wall */}
+          <mesh position={[0.45, -0.86, backWallZ + 0.02]}>
+            <planeGeometry args={[backWallWidth, 0.03]} />
+            <meshBasicMaterial color={accent} transparent opacity={0.25} />
+          </mesh>
+        </>
+      )}
 
       <ambientLight intensity={0.3} color={fill} />
       <pointLight position={[2.4, 2.8, 2.4]} intensity={0.7} color={accent} distance={17} />

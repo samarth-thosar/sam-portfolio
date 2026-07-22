@@ -1,7 +1,9 @@
 // Interaction suite with REAL pointer events: for every interactable, project
 // its world position to screen pixels, hover (expect hoverId), click (expect
 // inspectId + discovery), Esc (expect clear). Then click each door and expect
-// the room to change. See scripts/README.md.
+// the room to change. Object/door lists are derived directly from
+// src/data/world.js — adding a room to the game automatically adds it here,
+// no hand-maintained position list to go stale. See scripts/README.md.
 const path = require('path')
 const fs = require('fs')
 const puppeteer = require('puppeteer-core')
@@ -11,23 +13,9 @@ const URL = process.env.MINDSCAPE_URL || 'http://localhost:5173'
 const OUT = path.join(__dirname, 'shots')
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
-// Kept in sync with src/data/world.js by hand — if a hover fails with
-// hover=null everywhere, re-check these against the data file first.
-const OBJECTS = {
-  studio: [
-    ['studio-monitor', [-1.4, 1.15, -1.6]],
-    ['studio-papers', [0.2, 1.02, -1.5]],
-    ['studio-whiteboard', [1.9, 1.7, -2.2]],
-  ],
-  lab: [
-    ['lab-neural', [24, 1.5, -1.6]],
-    ['lab-visionguard', [25.6, 1.15, -1.5]],
-    ['lab-drone', [22.5, 1.0, -1.4]],
-  ],
-}
-const DOORS = { studio: [5.2, 1.2, -1.5], lab: [19.6, 1.2, -1.5] }
-
 ;(async () => {
+  const { WORLD } = await import('../src/data/world.js')
+
   fs.mkdirSync(OUT, { recursive: true })
   const browser = await puppeteer.launch({
     executablePath: EDGE,
@@ -74,9 +62,20 @@ const DOORS = { studio: [5.2, 1.2, -1.5], lab: [19.6, 1.2, -1.5] }
     return ok
   }
 
-  for (const room of ['studio', 'lab']) {
-    for (const [id, pos] of OBJECTS[room]) {
-      const [px, py] = await project([pos[0], pos[1] + 0.15, pos[2]])
+  // Visit every room the world actually has, driving travel via goToRoom
+  // (jumping there directly is fine — the door click itself is tested below).
+  for (const roomId of Object.keys(WORLD.rooms)) {
+    await page.evaluate((id) => window.__game.getState().goToRoom(id), roomId)
+    await sleep(3500) // let the crane+glide settle before probing positions
+
+    const room = WORLD.rooms[roomId]
+    for (const objId of room.objectIds || []) {
+      const obj = WORLD.objects[objId]
+      if (!obj) {
+        results.push({ id: objId, hover: `FAIL(no WORLD.objects entry)` })
+        continue
+      }
+      const [px, py] = await project([obj.position[0], obj.position[1] + 0.15, obj.position[2]])
       await page.mouse.move(px, py, { steps: 4 })
       await sleep(400)
       const afterHover = await state()
@@ -87,34 +86,41 @@ const DOORS = { studio: [5.2, 1.2, -1.5], lab: [19.6, 1.2, -1.5] }
       await sleep(500)
       const afterEsc = await state()
       results.push({
-        id,
-        hover: check(afterHover.hover === id) ? 'OK' : `FAIL(${afterHover.hover})`,
-        inspect: check(afterClick.inspect === id) ? 'OK' : `FAIL(${afterClick.inspect})`,
+        id: objId,
+        hover: check(afterHover.hover === objId) ? 'OK' : `FAIL(${afterHover.hover})`,
+        inspect: check(afterClick.inspect === objId) ? 'OK' : `FAIL(${afterClick.inspect})`,
         esc: check(afterEsc.inspect === null) ? 'OK' : 'FAIL',
       })
       await sleep(400)
     }
-    const expected = room === 'studio' ? 'lab' : 'studio'
-    const [dx, dy] = await project(DOORS[room])
-    await page.mouse.move(dx, dy, { steps: 4 })
-    await sleep(400)
-    await page.screenshot({ path: path.join(OUT, `hover-${room}-door.png`) })
-    await page.mouse.click(dx, dy)
-    await sleep(4200) // camera glide
-    const s = await state()
-    results.push({ id: `${room}-door`, glide: check(s.room === expected) ? `OK->${s.room}` : `FAIL(${s.room})` })
+
+    for (const door of room.doors || []) {
+      const [dx, dy] = await project(door.position)
+      await page.mouse.move(dx, dy, { steps: 4 })
+      await sleep(400)
+      await page.screenshot({ path: path.join(OUT, `hover-${roomId}-to-${door.to}-door.png`) })
+      await page.mouse.click(dx, dy)
+      await sleep(4200) // crane + glide
+      const s = await state()
+      results.push({ id: `${roomId}->${door.to}`, glide: check(s.room === door.to) ? `OK->${s.room}` : `FAIL(${s.room})` })
+      // land back on roomId so the next door/object in this loop projects correctly
+      await page.evaluate((id) => window.__game.getState().goToRoom(id), roomId)
+      await sleep(3500)
+    }
   }
 
   // clicking empty space must clear an active inspect (Canvas onPointerMissed)
-  await page.evaluate(() => window.__game.getState().inspect('studio-monitor'))
+  const firstObjectId = Object.keys(WORLD.objects)[0]
+  await page.evaluate((id) => window.__game.getState().inspect(id), firstObjectId)
   await sleep(800)
   await page.mouse.click(200, 150)
   await sleep(400)
   const cleared = (await state()).inspect === null
   results.push({ id: 'click-empty-clears-inspect', ok: check(cleared) ? 'OK' : 'FAIL' })
 
+  const totalDiscoverable = Object.keys(WORLD.objects).length
   const final = await state()
-  console.log(JSON.stringify({ results, discovered: `${final.found}/6`, pageErrors: errors }, null, 1))
+  console.log(JSON.stringify({ results, discovered: `${final.found}/${totalDiscoverable}`, pageErrors: errors }, null, 1))
   await browser.close()
   process.exit(failures || errors.length ? 1 : 0)
 })().catch((e) => {

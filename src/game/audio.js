@@ -4,20 +4,22 @@
  * is created on the visitor's first gesture: pressing "Enter").
  *
  * - a shared ambient pad + air, plus a per-room LAYER that crossfades on travel
- *   (Studio gets a slow tape-flutter warmth; Lab gets a server-hum/fan chatter)
+ *   (each room registers its own voice in ROOM_VOICES — Studio's slow tape-flutter
+ *   warmth, Lab's server-hum/fan chatter — added to `roomGains` generically)
  * - tactile one-shots timbred per artifact: hover/select vary by `kind` (data/
- *   world.js), so every one of the 6 objects has its own voice, not one shared blip
- * - room-to-room whoosh is directional (brighter into the Lab, warmer into the Studio)
+ *   world.js), so every object has its own voice, not one shared blip
+ * - room-to-room whoosh and the "leaving an object" cue are warm-vs-cool, keyed off
+ *   each room's `register` field in data/world.js — not a hardcoded room-id check
  */
+import { WORLD } from '../data/world.js'
 
 let ctx = null
 let master = null
 let ambientGain = null
-let studioGain = null
-let labGain = null
+const roomGains = {} // roomId -> GainNode, built once in startAmbient()
 let started = false
 let muted = false
-let currentRoom = 'studio'
+let currentRoom = WORLD.start
 
 function now() {
   return ctx.currentTime
@@ -53,6 +55,63 @@ export function initAudio() {
   startAmbient()
 }
 
+// Each room registers its own ambient "voice" — a small synthesis patch wired
+// into that room's gain node. Same object-literal-keyed-by-string idiom as
+// HOVER_VOICES/SELECT_VOICES below, just keyed by room id instead of kind.
+// Rooms with no entry here simply stay silent (fall through harmlessly).
+const ROOM_VOICES = {
+  // Studio: a slow tape-flutter warmth — a quiet detuned pair wandering gently,
+  // like an analog workspace that's always slightly, pleasantly imperfect.
+  studio: (gain) => {
+    const flutterFilter = ctx.createBiquadFilter()
+    flutterFilter.type = 'lowpass'
+    flutterFilter.frequency.value = 1400
+    flutterFilter.connect(gain)
+    const flutterGain = ctx.createGain()
+    flutterGain.gain.value = 0.03
+    flutterGain.connect(flutterFilter)
+    const flutterOsc = ctx.createOscillator()
+    flutterOsc.type = 'sine'
+    flutterOsc.frequency.value = 220
+    flutterOsc.connect(flutterGain)
+    flutterOsc.start()
+    const wow = ctx.createOscillator()
+    wow.frequency.value = 0.6
+    const wowGain = ctx.createGain()
+    wowGain.gain.value = 2.2
+    wow.connect(wowGain)
+    wowGain.connect(flutterOsc.detune)
+    wow.start()
+  },
+  // Lab: server-hum + fan chatter — a narrow electrical-hum harmonic pair,
+  // amplitude-modulated so it reads as cooling fans/rack noise, not a pure tone.
+  lab: (gain) => {
+    const humFilter = ctx.createBiquadFilter()
+    humFilter.type = 'bandpass'
+    humFilter.frequency.value = 180
+    humFilter.Q.value = 8
+    humFilter.connect(gain)
+    const humGain = ctx.createGain()
+    humGain.gain.value = 0.05
+    humGain.connect(humFilter)
+    ;[120, 240].forEach((f) => {
+      const o = ctx.createOscillator()
+      o.type = 'sine'
+      o.frequency.value = f
+      o.connect(humGain)
+      o.start()
+    })
+    const chatterLfo = ctx.createOscillator()
+    chatterLfo.type = 'square'
+    chatterLfo.frequency.value = 7
+    const chatterLfoGain = ctx.createGain()
+    chatterLfoGain.gain.value = 0.35
+    chatterLfo.connect(chatterLfoGain)
+    chatterLfoGain.connect(humGain.gain)
+    chatterLfo.start()
+  },
+}
+
 function startAmbient() {
   if (started || !ctx) return
   started = true
@@ -63,7 +122,7 @@ function startAmbient() {
   // fade the bed in gently
   ambientGain.gain.linearRampToValueAtTime(0.5, now() + 4)
 
-  // warm low pad — a soft, wide A minor-ish drone (shared by both rooms)
+  // warm low pad — a soft, wide A minor-ish drone (shared by every room)
   const filter = ctx.createBiquadFilter()
   filter.type = 'lowpass'
   filter.frequency.value = 520
@@ -108,72 +167,25 @@ function startAmbient() {
   air.start()
 
   // ---- per-room layers, crossfaded by setRoom() ----
-  studioGain = ctx.createGain()
-  studioGain.gain.value = 1 // world starts in the Studio
-  studioGain.connect(ambientGain)
-  labGain = ctx.createGain()
-  labGain.gain.value = 0
-  labGain.connect(ambientGain)
-
-  // Studio: a slow tape-flutter warmth — a quiet detuned pair wandering gently,
-  // like an analog workspace that's always slightly, pleasantly imperfect.
-  const flutterFilter = ctx.createBiquadFilter()
-  flutterFilter.type = 'lowpass'
-  flutterFilter.frequency.value = 1400
-  flutterFilter.connect(studioGain)
-  const flutterGain = ctx.createGain()
-  flutterGain.gain.value = 0.03
-  flutterGain.connect(flutterFilter)
-  const flutterOsc = ctx.createOscillator()
-  flutterOsc.type = 'sine'
-  flutterOsc.frequency.value = 220
-  flutterOsc.connect(flutterGain)
-  flutterOsc.start()
-  const wow = ctx.createOscillator()
-  wow.frequency.value = 0.6
-  const wowGain = ctx.createGain()
-  wowGain.gain.value = 2.2
-  wow.connect(wowGain)
-  wowGain.connect(flutterOsc.detune)
-  wow.start()
-
-  // Lab: server-hum + fan chatter — a narrow electrical-hum harmonic pair,
-  // amplitude-modulated so it reads as cooling fans/rack noise, not a pure tone.
-  const humFilter = ctx.createBiquadFilter()
-  humFilter.type = 'bandpass'
-  humFilter.frequency.value = 180
-  humFilter.Q.value = 8
-  humFilter.connect(labGain)
-  const humGain = ctx.createGain()
-  humGain.gain.value = 0.05
-  humGain.connect(humFilter)
-  ;[120, 240].forEach((f) => {
-    const o = ctx.createOscillator()
-    o.type = 'sine'
-    o.frequency.value = f
-    o.connect(humGain)
-    o.start()
+  Object.keys(WORLD.rooms).forEach((id) => {
+    const g = ctx.createGain()
+    g.gain.value = id === WORLD.start ? 1 : 0
+    g.connect(ambientGain)
+    roomGains[id] = g
+    ROOM_VOICES[id]?.(g)
   })
-  const chatterLfo = ctx.createOscillator()
-  chatterLfo.type = 'square'
-  chatterLfo.frequency.value = 7
-  const chatterLfoGain = ctx.createGain()
-  chatterLfoGain.gain.value = 0.35
-  chatterLfo.connect(chatterLfoGain)
-  chatterLfoGain.connect(humGain.gain)
-  chatterLfo.start()
 }
 
-// Crossfades the ambient room layer over ~1.3s. Call from goToRoom so the
-// Lab's server-hum and the Studio's tape-flutter fade in/out as you travel.
+// Crossfades the ambient room layer over ~1.3s. Call from goToRoom so each
+// room's own layer fades in/out as you travel.
 export function setRoom(roomId) {
   currentRoom = roomId
-  if (!ctx || !studioGain || !labGain) return
+  if (!ctx) return
   const t = now() + 1.3
-  studioGain.gain.cancelScheduledValues(now())
-  studioGain.gain.linearRampToValueAtTime(roomId === 'studio' ? 1 : 0, t)
-  labGain.gain.cancelScheduledValues(now())
-  labGain.gain.linearRampToValueAtTime(roomId === 'lab' ? 1 : 0, t)
+  Object.entries(roomGains).forEach(([id, g]) => {
+    g.gain.cancelScheduledValues(now())
+    g.gain.linearRampToValueAtTime(id === roomId ? 1 : 0, t)
+  })
 }
 
 export function setMuted(v) {
@@ -338,26 +350,29 @@ export function playSelect(kind) {
   else blip(560, 900, 0.13, 'sine', 0.12)
 }
 
-// leaving an inspected object — split by room so Lab feels colder than Studio
+const registerOf = (roomId) => WORLD.rooms[roomId]?.register || 'warm'
+
+// leaving an inspected object — split by the room's warm/cool register, not a
+// hardcoded room-id check, so any new room just needs `register` in its data
 export function playBack(room) {
-  if (room === 'lab') blip(680, 420, 0.1, 'sine', 0.08)
+  if (registerOf(room) === 'cool') blip(680, 420, 0.1, 'sine', 0.08)
   else blip(720, 440, 0.16, 'sine', 0.09)
 }
 
-// room-to-room travel — direction-aware so entering the Lab sounds different
-// from returning to the Studio, previewing the destination's register
+// room-to-room travel — direction-aware so entering a cool-register room
+// sounds different from a warm one, previewing the destination's register
 export function playWhoosh(direction) {
   if (!ctx || muted) return
-  const intoLab = direction === 'lab'
+  const cool = registerOf(direction) === 'cool'
   const t0 = now()
   const src = ctx.createBufferSource()
   src.buffer = noise
   const f = ctx.createBiquadFilter()
   f.type = 'bandpass'
-  f.Q.value = intoLab ? 1.1 : 0.7
+  f.Q.value = cool ? 1.1 : 0.7
   f.frequency.setValueAtTime(300, t0)
-  f.frequency.exponentialRampToValueAtTime(intoLab ? 2600 : 1900, t0 + 0.28)
-  f.frequency.exponentialRampToValueAtTime(intoLab ? 620 : 420, t0 + 0.6)
+  f.frequency.exponentialRampToValueAtTime(cool ? 2600 : 1900, t0 + 0.28)
+  f.frequency.exponentialRampToValueAtTime(cool ? 620 : 420, t0 + 0.6)
   const g = ctx.createGain()
   g.gain.setValueAtTime(0.0001, t0)
   g.gain.exponentialRampToValueAtTime(0.12, t0 + 0.12)
