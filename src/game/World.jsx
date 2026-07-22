@@ -23,6 +23,7 @@ const ROOM_COMPONENTS = {
   greenhouse: lazy(() => import('./rooms/Greenhouse.jsx')),
   guildhall: lazy(() => import('./rooms/GuildHall.jsx')),
   pitch: lazy(() => import('./rooms/Pitch.jsx')),
+  vault: lazy(() => import('./rooms/Vault.jsx')),
 }
 
 // dev-only baked-pipeline flags:

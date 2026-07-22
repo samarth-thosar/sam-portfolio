@@ -94,13 +94,58 @@ function Football({ to, position, label, accent }) {
   )
 }
 
-function WallPoster({ make, position, rotation, size }) {
-  const tex = useMemo(make, [make])
+// The Vault's hidden switch: the same No.8 poster that's always hung here,
+// now clickable. Deliberately has NO idle pulse/dot like every other
+// discoverable object — the only tell is a faint glint if you happen to
+// hover it, which is the point. A secret that announced itself wouldn't be one.
+function SecretSwitch({ to, position, rotation = [0, 0, 0], label, accent, size = [1.1, 1.42] }) {
+  const [hovered, setHovered] = useState(false)
+  useCursor(hovered)
+  const goToRoom = useGame((s) => s.goToRoom)
+  const tex = useMemo(posterEight, [])
+  const glint = useRef()
+
+  useFrame((_, dt) => {
+    const k = 1 - Math.exp(-8 * dt)
+    if (glint.current) {
+      const target = hovered ? 0.3 : 0
+      glint.current.material.opacity += (target - glint.current.material.opacity) * k
+    }
+  })
+
   return (
-    <mesh position={position} rotation={rotation}>
-      <planeGeometry args={size} />
-      <meshBasicMaterial map={tex} toneMapped={false} />
-    </mesh>
+    <group position={position} rotation={rotation}>
+      <mesh
+        onPointerOver={(e) => {
+          e.stopPropagation()
+          setHovered(true)
+        }}
+        onPointerOut={(e) => {
+          e.stopPropagation()
+          setHovered(false)
+        }}
+        onClick={(e) => {
+          e.stopPropagation()
+          playWhoosh(to)
+          goToRoom(to)
+        }}
+      >
+        <planeGeometry args={size} />
+        <meshBasicMaterial map={tex} toneMapped={false} />
+      </mesh>
+      <mesh ref={glint} raycast={NOOP} position={[0, 0, 0.004]}>
+        <planeGeometry args={[size[0] * 1.05, size[1] * 1.03]} />
+        <meshBasicMaterial color={accent} transparent opacity={0} depthWrite={false} />
+      </mesh>
+      {hovered && (
+        <Html position={[0, size[1] / 2 + 0.15, 0]} center zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
+          <div className="iobj is-hover">
+            <span className="iobj__dot" />
+            {label} →
+          </div>
+        </Html>
+      )}
+    </group>
   )
 }
 
@@ -273,8 +318,8 @@ export default function Studio() {
             radius={0.01}
           />
         ))}
-        {/* wall poster — the No.8 */}
-        <WallPoster make={posterEight} position={[2.9, 2.35, -3.26]} rotation={[0, 0, 0]} size={[1.1, 1.42]} />
+        {/* the No.8 poster is rendered by SecretSwitch below, not here — it's
+            also the Vault's hidden trigger */}
       </group>
 
       {/* ---- interactables ---- */}
@@ -335,11 +380,13 @@ export default function Studio() {
         )
       })}
 
-      {/* ---- football — a non-Door travel trigger; kicking it is the
-          Pitch's entry, same goToRoom contract as every door ---- */}
-      {(R.triggers || []).map((tr) => (
-        <Football key={tr.to} to={tr.to} position={tr.position} label={tr.label} accent={WORLD.rooms[tr.to].accent} />
-      ))}
+      {/* ---- non-Door travel triggers: the football (kicking it is the
+          Pitch's entry) and the secret No.8 poster (the Vault's) — both the
+          same goToRoom contract as every door, just a different skin ---- */}
+      {(R.triggers || []).map((tr) => {
+        const Trigger = tr.kind === 'secret' ? SecretSwitch : Football
+        return <Trigger key={tr.to} to={tr.to} position={tr.position} label={tr.label} accent={WORLD.rooms[tr.to].accent} />
+      })}
     </>
   )
 }

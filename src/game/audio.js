@@ -280,6 +280,38 @@ const ROOM_VOICES = {
     }
     whistle()
   },
+  // Vault: a deep, hushed low drone with a very occasional soft shimmer —
+  // a treasury's quiet, not a room anyone's meant to linger loudly in.
+  vault: (gain) => {
+    const droneFilter = ctx.createBiquadFilter()
+    droneFilter.type = 'lowpass'
+    droneFilter.frequency.value = 320
+    droneFilter.connect(gain)
+    const droneGain = ctx.createGain()
+    droneGain.gain.value = 0.045
+    droneGain.connect(droneFilter)
+    const o = ctx.createOscillator()
+    o.type = 'sine'
+    o.frequency.value = 55
+    o.connect(droneGain)
+    o.start()
+    const shimmer = () => {
+      const t0 = now()
+      const s = ctx.createOscillator()
+      s.type = 'sine'
+      s.frequency.value = 2200
+      const g = ctx.createGain()
+      g.gain.setValueAtTime(0.0001, t0)
+      g.gain.exponentialRampToValueAtTime(0.018, t0 + 0.4)
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 2.2)
+      s.connect(g)
+      g.connect(gain)
+      s.start(t0)
+      s.stop(t0 + 2.3)
+      setTimeout(shimmer, 6000 + Math.random() * 6000)
+    }
+    shimmer()
+  },
 }
 
 function startAmbient() {
@@ -455,6 +487,9 @@ const HOVER_VOICES = {
   ieeeapp: () => blip(1500, 1650, 0.025, 'square', 0.02),
   jersey: () => noiseTick(0.02, 3200, 0.035),
   tactics: () => blip(560, 480, 0.04, 'sine', 0.03),
+  certs: () => blip(1400, 1550, 0.03, 'square', 0.022),
+  globe: () => blip(500, 440, 0.05, 'sine', 0.025),
+  plaque: () => noiseTick(0.02, 2600, 0.03),
 }
 export function playHover(kind) {
   const voice = HOVER_VOICES[kind]
@@ -607,6 +642,18 @@ const SELECT_VOICES = {
     noiseRap(0.05, 540, 3, 0.13)
     noiseRap(0.05, 500, 3, 0.12, 0.09)
   },
+  // a clean two-tone "unlock" — certification, made audible
+  certs: () => {
+    blip(1046.5, 1046.5, 0.1, 'triangle', 0.07)
+    blip(1568, 1568, 0.14, 'triangle', 0.08, 0.1)
+  },
+  // a slow orbital swell — scale, not a percussive confirm
+  globe: () => {
+    blip(220, 330, 0.4, 'sine', 0.06)
+    blip(330, 440, 0.45, 'sine', 0.04, 0.12)
+  },
+  // one solid, dignified low tone — quiet pride, not a celebration sting
+  plaque: () => blip(220, 200, 0.3, 'triangle', 0.09),
 }
 export function playSelect(kind) {
   const voice = SELECT_VOICES[kind]

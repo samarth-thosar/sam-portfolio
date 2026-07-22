@@ -17,8 +17,9 @@ import { library } from './rooms/library.js'
 import { greenhouse } from './rooms/greenhouse.js'
 import { guildhall } from './rooms/guildhall.js'
 import { pitch } from './rooms/pitch.js'
+import { vault } from './rooms/vault.js'
 
-const ALL_ROOMS = [threshold, studio, lab, rooftop, library, greenhouse, guildhall, pitch]
+const ALL_ROOMS = [threshold, studio, lab, rooftop, library, greenhouse, guildhall, pitch, vault]
 
 export const WORLD = {
   start: 'threshold',

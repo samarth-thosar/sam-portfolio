@@ -41,8 +41,14 @@ export const studio = {
     ],
     // non-Door travel triggers — same `to` contract as doors (goToRoom), a
     // different skin. The football sits in the open floor, clear of the
-    // desk cluster and every door's projected screen position.
-    triggers: [{ to: 'pitch', position: [2.2, -0.75, 1.6], label: 'The Pitch', kind: 'football' }],
+    // desk cluster and every door's projected screen position. The vault
+    // trigger is `kind: 'secret'` — the No.8 poster already on the back
+    // wall, made clickable with no idle-pulse affordance, so it doesn't
+    // stand out from every other (openly discoverable) glowing object.
+    triggers: [
+      { to: 'pitch', position: [2.2, -0.75, 1.6], label: 'The Pitch', kind: 'football' },
+      { to: 'vault', position: [2.9, 2.35, -3.26], label: 'The Vault', kind: 'secret' },
+    ],
   },
 
   objects: {
